@@ -5,9 +5,8 @@ import Time
 import Date
 import Graphics.Element
 
-nowHtml time =
-    let date = time |> Date.fromTime
-        spanToString num = H.span [] [H.text (num |> toString)]
+dateControl date =
+    let spanToString num = H.span [] [H.text (num |> toString)]
         span string = H.span [] [H.text string]
     in
     H.div
@@ -24,8 +23,12 @@ nowHtml time =
             date |> Date.minute |> spanToString
         ]
 
-dateControl time =
-    H.div [] [nowHtml time]
+startTime =
+    Signal.constant ()
+    |> Time.timestamp
+    |> Signal.map fst
 
 main =
-    Signal.map dateControl (Time.every Time.second)
+    startTime
+    |> Signal.map Date.fromTime
+    |> Signal.map dateControl
