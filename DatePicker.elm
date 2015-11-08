@@ -11,7 +11,13 @@ import Task
 
 type alias Model = Float
 
-type Action = Increment | Decrement | SetTime Time.Time
+startTime =
+    Signal.constant ()
+    |> Time.timestamp
+    |> Signal.map fst
+    |> Signal.map SetTime
+
+type Action = Increment | Decrement | SetTime Time.Time | SetNow
 
 dateControl address date =
     let spanToString num = H.span [] [H.text (num |> toString)]
@@ -32,6 +38,7 @@ dateControl address date =
                 span ":",
                 date |> Date.minute |> spanToString
             ],
+        H.button [HE.onClick address SetNow] [H.text "now"],
         H.button [HE.onClick address Decrement] [H.text "-"],
         H.button [HE.onClick address Increment] [H.text "+"]
     ]
@@ -44,14 +51,15 @@ view address model =
     |> dateControl address
 
 update action model =
-    let newModel =
-        case action of
-        Increment -> model + Time.minute
-        Decrement -> model - Time.minute
-        SetTime t -> t
-    in
-        (newModel, Effects.none)
+    case action of
+    Increment -> (model + Time.minute, Effects.none)
+    Decrement -> (model - Time.minute, Effects.none)
+    SetTime t -> (t, Effects.none)
+    SetNow -> (model, Effects.tick SetTime)
 
-app = StartApp.start { init = init, update = update, view = view, inputs = [] }
+app = StartApp.start { init = init, update = update, view = view, inputs = [startTime] }
 
 main = app.html
+
+port tasks : Signal (Task.Task Effects.Never ())
+port tasks = app.tasks
