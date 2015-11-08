@@ -5,9 +5,13 @@ import Signal
 import Time
 import Date
 import Graphics.Element
-import StartApp.Simple as StartApp
+import StartApp
+import Effects exposing (Effects)
+import Task
 
-type Action = Increment | Decrement
+type alias Model = Float
+
+type Action = Increment | Decrement | SetTime Time.Time
 
 dateControl address date =
     let spanToString num = H.span [] [H.text (num |> toString)]
@@ -32,12 +36,7 @@ dateControl address date =
         H.button [HE.onClick address Increment] [H.text "+"]
     ]
 
-startTime =
-    Signal.constant ()
-    |> Time.timestamp
-    |> Signal.map fst
-
-model = 0.0
+init = (0.0, Effects.tick SetTime)
 
 view address model =
     model
@@ -45,8 +44,14 @@ view address model =
     |> dateControl address
 
 update action model =
-    case action of
-    Increment -> model + Time.minute
-    Decrement -> model - Time.minute
+    let newModel =
+        case action of
+        Increment -> model + Time.minute
+        Decrement -> model - Time.minute
+        SetTime t -> t
+    in
+        (newModel, Effects.none)
 
-main = StartApp.start { model = model, view = view, update = update }
+app = StartApp.start { init = init, update = update, view = view, inputs = [] }
+
+main = app.html
